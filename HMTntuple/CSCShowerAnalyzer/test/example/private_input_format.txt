@@ -1,0 +1,1 @@
+root://xrootd-cms.infn.it//store/hidata/HIRun2023A/HIPhysicsRawPrime0/RAW/v1/000/374/668/00000/001a87d5-a7f0-4c10-8c78-4ca37a95734b.root

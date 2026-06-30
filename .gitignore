@@ -1,0 +1,11 @@
+# build artifacts / caches
+__pycache__/
+*.pyc
+*.so
+*.d
+
+# data / outputs that should not live in the repo
+*.root
+configdump.py
+slurm_*/
+logs/

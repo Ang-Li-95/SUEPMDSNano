@@ -1,0 +1,8 @@
+<lcgdict>
+  <class name="suep::LLPMDSMatch" ClassVersion="3">
+    <version ClassVersion="3" checksum="2003818421"/>
+  </class>
+  <class name="std::vector&lt;suep::LLPMDSMatch&gt;"/>
+  <class name="edm::ValueMap&lt;suep::LLPMDSMatch&gt;"/>
+  <class name="edm::Wrapper&lt;edm::ValueMap&lt;suep::LLPMDSMatch&gt; &gt;"/>
+</lcgdict>
