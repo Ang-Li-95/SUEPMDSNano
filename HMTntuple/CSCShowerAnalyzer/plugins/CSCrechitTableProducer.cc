@@ -67,10 +67,13 @@ void CSCrechitTableProducer::produce(edm::StreamID, edm::Event& iEvent, const ed
     for (auto id : unique_ids){
         if (id!=detid)  unique_ids.push_back(detid);
     }
-    auto thischamber = geo.chamber(detid);
+    // Use the LAYER frame, not the chamber: rechit.localPosition() is in the layer
+    // local frame, so chamber->toGlobal() would collapse every rechit z to the
+    // chamber-center plane (losing which of the 6 layers it is in).
+    auto thislayer = geo.layer(detid);
     int endcap = CSCDetId::endcap(detid) == 1 ? 1 : -1;
-    if (thischamber) {
-      GlobalPoint globalPosition = thischamber->toGlobal(recHitLocalPosition);
+    if (thislayer) {
+      GlobalPoint globalPosition = thislayer->toGlobal(recHitLocalPosition);
 
       cscRechitsX.push_back( globalPosition.x());
       cscRechitsY.push_back( globalPosition.y());

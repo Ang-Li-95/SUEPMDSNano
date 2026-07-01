@@ -63,11 +63,14 @@ void RPCrechitTableProducer::produce(edm::StreamID, edm::Event& iEvent, const ed
     LocalPoint recHitLocalPosition = rechit.localPosition();
     auto geoid = rechit.geographicalId();
     RPCDetId rpcdetid = RPCDetId(geoid);
-    auto thischamber = geo.chamber(rpcdetid);
+    // Use the ROLL frame, not the chamber: rechit.localPosition() is in the roll
+    // local frame, so chamber->toGlobal() would mislocate the global position by
+    // the roll's offset within the chamber.
+    auto thisroll = geo.roll(rpcdetid);
 
-    if (thischamber) {
+    if (thisroll) {
 
-      GlobalPoint globalPosition = thischamber->toGlobal(recHitLocalPosition);
+      GlobalPoint globalPosition = thisroll->toGlobal(recHitLocalPosition);
       rpcRechitsX.push_back( globalPosition.x());
       rpcRechitsY.push_back( globalPosition.y());
       rpcRechitsZ.push_back( globalPosition.z());
