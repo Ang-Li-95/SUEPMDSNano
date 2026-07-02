@@ -87,7 +87,7 @@ process.cscTriggerPrimitiveDigis.commonParam.runME11ILT = False
 process.cscTriggerPrimitiveDigis.commonParam.runME21ILT = False
 
 #from L1Trigger.CSCTriggerPrimitives.CSCShowerAnalyzer_cfi import cscTriggerPrimitivesAnalyzer
-from HMTntuple.CSCShowerAnalyzer.CSCShowerAnalyzer_cfi import cscTriggerPrimitivesAnalyzer
+from SUEPMDSNano.CSCShowerAnalyzer.CSCShowerAnalyzer_cfi import cscTriggerPrimitivesAnalyzer
 
 
 process.cscTriggerPrimitivesAnalyzer = cscTriggerPrimitivesAnalyzer

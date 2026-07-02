@@ -10,7 +10,7 @@
 <use name="DataFormats/CSCRecHit"/>
 <use name="DataFormats/DTRecHit"/>
 <use name="DataFormats/RPCRecHit"/>
-<use name="SUEPProduction/MDSFormats"/>
+<use name="SUEPMDSNano/MDSFormats"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/Utilities"/>
 <use name="FWCore/MessageLogger"/>

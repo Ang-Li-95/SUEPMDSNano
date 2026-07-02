@@ -1,5 +1,5 @@
-#ifndef SUEPProduction_MDSFormats_LLPMDSMatch_h
-#define SUEPProduction_MDSFormats_LLPMDSMatch_h
+#ifndef MDSFormats_LLPMDSMatch_h
+#define MDSFormats_LLPMDSMatch_h
 
 namespace suep {
 

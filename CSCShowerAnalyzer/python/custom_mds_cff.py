@@ -35,7 +35,7 @@ dtMDSClusterTable = cscMDSClusterTable.clone(
     name= cms.string("dtMDSHLTCluster")
 )
 
-from HMTntuple.CSCShowerAnalyzer.cscShowerDigiTable_cfi import cscShowerDigiTable
+from SUEPMDSNano.CSCShowerAnalyzer.cscShowerDigiTable_cfi import cscShowerDigiTable
 
 dataCSCdigiTable = cscShowerDigiTable.clone(
     LCTShower = cms.InputTag("muonCSCDigis","MuonCSCShowerDigi"),
@@ -46,11 +46,11 @@ emulCSCdigiTable = cscShowerDigiTable.clone(
     name = cms.string("elct")
 )
 
-from HMTntuple.CSCShowerAnalyzer.cscRechitsTable_cfi import cscRechitsTable 
-from HMTntuple.CSCShowerAnalyzer.dtRechitsTable_cfi import dtRechitsTable 
-from HMTntuple.CSCShowerAnalyzer.rpcRechitsTable_cfi import rpcRechitsTable 
-from HMTntuple.CSCShowerAnalyzer.cscSegmentsTable_cfi import cscSegmentsTable 
-from HMTntuple.CSCShowerAnalyzer.dtSegmentsTable_cfi import dtSegmentsTable 
+from SUEPMDSNano.CSCShowerAnalyzer.cscRechitsTable_cfi import cscRechitsTable 
+from SUEPMDSNano.CSCShowerAnalyzer.dtRechitsTable_cfi import dtRechitsTable 
+from SUEPMDSNano.CSCShowerAnalyzer.rpcRechitsTable_cfi import rpcRechitsTable 
+from SUEPMDSNano.CSCShowerAnalyzer.cscSegmentsTable_cfi import cscSegmentsTable 
+from SUEPMDSNano.CSCShowerAnalyzer.dtSegmentsTable_cfi import dtSegmentsTable 
 
 cscRechitsTable = cscRechitsTable.clone( 
     recHitLabel = cms.InputTag("csc2DRecHits")
@@ -122,8 +122,8 @@ def add_mdsTables(process, MDSshowerDigi=False,saveRechits=False):
         # (llpIdx, llpPdgId, llpMatchType, llpSimX/Y/Z, llpSimE, llpSimTof, ...) to the
         # cscRechits/dtRecHits/rpcRecHits tables above. A ValueMap of a POD struct is
         # schema-stable, so it survives the 14_0_21 -> 15_0_2 boundary (a FlatTable does not).
-        # Requires the SUEPProduction/MDSFormats package to be built in this area.
-        from HMTntuple.CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
+        # Requires the SUEPMDSNano/MDSFormats package to be built in this area.
+        from CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
             cscLLPMatchTable, dtLLPMatchTable, rpcLLPMatchTable)
         process.cscLLPMatchTable = cscLLPMatchTable
         process.dtLLPMatchTable = dtLLPMatchTable

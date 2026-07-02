@@ -10,22 +10,23 @@ entirely (the cherry-picked lines are now standalone in this package).
 ## What's inside
 
 ```
-SUEPMDSNano/
-├── setup.sh                      # one-shot installer into a CMSSW_15_0_2 area
-├── SUEPProduction/MDSFormats/    # the suep::LLPMDSMatch dataformat (+ dictionary)
-├── HMTntuple/CSCShowerAnalyzer/      # CSC/DT/RPC rechit, segment, shower & LLP-match tables
+SUEPMDSNano/                      # = the CMSSW subsystem; clone directly into $CMSSW_BASE/src
+├── MDSFormats/                   # the suep::LLPMDSMatch dataformat (+ dictionary)
+├── CSCShowerAnalyzer/            # CSC/DT/RPC rechit, segment, shower & LLP-match tables
 │   ├── plugins/
 │   │   ├── LLPMDSMatchTableProducer.cc          #   LLP-truth columns (templated, hardened)
 │   │   └── MDSSimpleFlatTableProducerPlugins.cc #   was the PhysicsTools cherry-pick
 │   └── python/custom_mds_cff.py                 #   add_mdsTables(process, saveRechits=True)
-└── MDSNANO/                          # the cmsRun config + Slurm submit/check tools
+└── MDSNANO/                      # the cmsRun config + Slurm submit/check tools
     ├── RunIII2024MC.py
     ├── submit_slurm.py
     └── check_jobs.py
 ```
 
-The top-level directories mirror CMSSW subsystems, so installing is just
-"copy them into `$CMSSW_BASE/src` and build" — which `setup.sh` does.
+The repository itself acts as the CMSSW subsystem: cloned as
+`$CMSSW_BASE/src/SUEPMDSNano`, scram picks up the packages
+`SUEPMDSNano/MDSFormats` and `SUEPMDSNano/CSCShowerAnalyzer` directly — no
+copy step needed.
 
 ## Install
 
@@ -33,7 +34,7 @@ The top-level directories mirror CMSSW subsystems, so installing is just
 cmsrel CMSSW_15_0_2
 cd CMSSW_15_0_2/src && cmsenv
 git clone <this-repo> SUEPMDSNano        # or copy this folder here
-bash SUEPMDSNano/setup.sh                # copy packages + scram b
+scram b -j 8
 ```
 
 No `git cms-addpkg` / cherry-pick step — everything is self-contained.
@@ -41,7 +42,7 @@ No `git cms-addpkg` / cherry-pick step — everything is self-contained.
 ## Run
 
 ```bash
-cmsRun MDSNANO/RunIII2024MC.py inputFiles=file:AODSIM.root outputFile=nano.root maxEvents=-1
+cmsRun SUEPMDSNano/MDSNANO/RunIII2024MC.py inputFiles=file:AODSIM.root outputFile=nano.root maxEvents=-1
 ```
 
 The AODSIM input must have been produced with the `llpMDSRecHitMatcher` module
@@ -78,8 +79,8 @@ guaranteed to line up with the rechit table they extend.
   columns are added by `add_mdsTables` as a customise of `genParticleTable`.
   If a future CMSSW release ships these officially, delete the standalone copies
   to avoid a duplicate plugin name.
-- **`SUEPProduction/MDSFormats` is shared with the production area.** The same
-  package must also be built in the CMSSW_14_0_21 production area (it is, under
-  `SVJ/Production/cmssw/SUEPProduction/MDSFormats`). Keep the two copies of
+- **`SUEPMDSNano/MDSFormats` is shared with the production area.** The same
+  dataformat must also be built in the CMSSW_14_0_21 production area (it is,
+  under `SVJ/Production/cmssw/SUEPProduction/MDSFormats`). Keep the two copies of
   `interface/LLPMDSMatch.h` identical — if you change the struct, bump the
   `ClassVersion`/checksum in `src/classes_def.xml` in **both** places.

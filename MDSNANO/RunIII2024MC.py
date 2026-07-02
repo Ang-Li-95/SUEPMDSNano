@@ -144,7 +144,7 @@ from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeCommon
 
 #call to customisation function nanoAOD_customizeCommon imported from PhysicsTools.NanoAOD.nano_cff
 process = nanoAOD_customizeCommon(process)
-from HMTntuple.CSCShowerAnalyzer.custom_mds_cff import add_mdsTables
+from SUEPMDSNano.CSCShowerAnalyzer.custom_mds_cff import add_mdsTables
 
 process = add_mdsTables(process, saveRechits=True)
 

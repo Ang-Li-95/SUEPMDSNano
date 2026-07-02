@@ -31,7 +31,7 @@
 #include "DataFormats/CSCRecHit/interface/CSCRecHit2DCollection.h"
 #include "DataFormats/DTRecHit/interface/DTRecHitCollection.h"
 #include "DataFormats/RPCRecHit/interface/RPCRecHitCollection.h"
-#include "SUEPProduction/MDSFormats/interface/LLPMDSMatch.h"
+#include "SUEPMDSNano/MDSFormats/interface/LLPMDSMatch.h"
 
 template <typename TColl>
 class LLPMDSMatchTableProducerT : public edm::global::EDProducer<> {
