@@ -148,6 +148,9 @@ from SUEPMDSNano.CSCShowerAnalyzer.custom_mds_cff import add_mdsTables
 
 process = add_mdsTables(process, saveRechits=True)
 
+# Full (unpruned) genParticles table. The rechit llpIdx column indexes the AOD
+# genParticles collection, so this table must keep the full collection in its
+# original order (no cut) for llpIdx to be usable as a SUEPGenPart row index.
 process.genParticleForSUEPTable = process.genParticleTable.clone(
     src = cms.InputTag("genParticles"),
     name = cms.string("SUEPGenPart"),

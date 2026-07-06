@@ -54,6 +54,11 @@ rechit, `llpIdx < 0` if unmatched:
 |---|---|
 | `cscRechits`, `dtRecHits`, `rpcRecHits` | `llpIdx`, `llpPdgId`, `llpMatchType` (1=geo, 2=digisimlink, 3=both), `llpNSimHits`, `llpSimX/Y/Z`, `llpSimE`, `llpSimTof`, `llpSimDxy` |
 
+`llpIdx` is the index of the matched LLP in the AOD `genParticles` collection.
+`RunIII2024MC.py` writes that full collection out as the `SUEPGenPart` table
+(same order, no selection), so `llpIdx` is directly the row index into
+`SUEPGenPart` — it does **not** index the standard (pruned) `GenPart` table.
+
 It also adds `vx/vy/vz` (gen production vertex) to the standard `GenPart` table.
 
 ## How the LLP truth gets here

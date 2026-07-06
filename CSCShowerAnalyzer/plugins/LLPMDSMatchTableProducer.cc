@@ -88,7 +88,10 @@ private:
     }
 
     auto tab = std::make_unique<nanoaod::FlatTable>(n, name_, false, extension_);
-    tab->addColumn<int>("llpIdx", llpIdx, "matched LLP index (-1 if unmatched)");
+    tab->addColumn<int>("llpIdx",
+                        llpIdx,
+                        "index of the matched LLP in the AOD genParticles collection, i.e. the SUEPGenPart row "
+                        "(not the pruned GenPart table); -1 if unmatched");
     tab->addColumn<int>("llpPdgId", pdgId, "pdgId of the matched LLP decay product");
     tab->addColumn<int>("llpMatchType", matchType, "match bitmask: 1=geometric, 2=digisimlink, 3=both");
     tab->addColumn<int>("llpNSimHits", nSimHits, "number of LLP signal SimHits in this DetId");
