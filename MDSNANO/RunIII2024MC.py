@@ -30,7 +30,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('/store/user/lian/SUEPs/2024/run3_ggH-channel_mMed-125_mDark-2_portal-higgs_temp-1_decay-generic_ctau-5000p0_13TeV-pythia8/AODSIM/1-AODSIM_1000.root'),
+    fileNames = cms.untracked.vstring('/store/user/lian/SUEPs_Gen/2024/run3_ggH-channel_mMed-125_mDark-2_portal-higgs_temp-2_decay-generic_ctau-5000p0_13TeV-pythia8/AODSIM/1-AODSIM_1000.root'),
     secondaryFileNames = cms.untracked.vstring()
 )
 

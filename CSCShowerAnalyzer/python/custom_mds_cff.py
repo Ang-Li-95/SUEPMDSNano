@@ -123,7 +123,7 @@ def add_mdsTables(process, MDSshowerDigi=False,saveRechits=False):
         # cscRechits/dtRecHits/rpcRecHits tables above. A ValueMap of a POD struct is
         # schema-stable, so it survives the 14_0_21 -> 15_0_2 boundary (a FlatTable does not).
         # Requires the SUEPMDSNano/MDSFormats package to be built in this area.
-        from CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
+        from SUEPMDSNano.CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
             cscLLPMatchTable, dtLLPMatchTable, rpcLLPMatchTable)
         process.cscLLPMatchTable = cscLLPMatchTable
         process.dtLLPMatchTable = dtLLPMatchTable
