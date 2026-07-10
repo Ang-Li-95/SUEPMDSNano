@@ -277,6 +277,45 @@ always reads `filelists/job_i.txt` and writes `<job-name>_i.root`.
   file followed by an atomic `mv` (local), so an interrupted copy never leaves a
   partial file masquerading as a good one.
 
+## Alternative: CRAB (central datasets)
+
+For **central (DBS) datasets** CRAB is usually the better tool than Slurm: jobs
+run at the grid sites hosting the files (no AAA streaming to this cluster),
+with DBS-driven splitting and automatic retries. The submitter lives in
+`../CSCShowerAnalyzer/test/crab_multi_dataset.py`; use `--pset-params` to pass
+the `RunIII2024MC.py` options (for background AODSIM: `llpMatch=0`; always add
+`maxEvents=-1`).
+
+```bash
+# inside the cmssw-el8 container:
+cd $CMSSW_BASE/src && cmsenv
+source /cvmfs/cms.cern.ch/common/crab-setup.sh
+voms-proxy-init -voms cms -rfc --valid 168:00
+
+# one dataset per line (verify names with dasgoclient first)
+echo '/DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-<conditions>/AODSIM' > bkg2024.txt
+
+cd $CMSSW_BASE/src/SUEPMDSNano/CSCShowerAnalyzer/test
+python3 crab_multi_dataset.py -i /path/to/bkg2024.txt \
+    -p $CMSSW_BASE/src/SUEPMDSNano/MDSNANO/RunIII2024MC.py \
+    --pset-params 'llpMatch=0 maxEvents=-1' \
+    -t MDSnano -o /store/user/<username>/MDSnano \
+    --site <your-storage-site> --max-memory 3000
+
+python3 crab_multi_dataset.py -i /path/to/bkg2024.txt --status   # also auto-resubmits failures
+```
+
+`--site` must be a site where you have `/store/user` (or group) write quota,
+e.g. `T3_US_FNALLPC` (the script's default, used with
+`-o /store/group/lpclonglived/MDSnano/` in the past), `T3_CH_CERNBOX`, or
+`T2_AT_Vienna`. Unlike the Slurm route the output lands on grid storage —
+fetch it later with `xrdcp`, or point analysis jobs at it via xrootd.
+
+Note for CRAB: `RunIII2024MC.py` applies an explicit `maxEvents=` argument even
+when no input files are given on the command line — CRAB injects the inputs at
+job runtime and its wrapper does not touch the `maxEvents.output` cap, so
+without `maxEvents=-1` in `--pset-params` every job would write only 10 events.
+
 ## Notes & gotchas
 
 - **Check after the array finishes.** While jobs are still running their outputs

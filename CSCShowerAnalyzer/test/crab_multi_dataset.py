@@ -134,6 +134,9 @@ def createConfig(args, dataset):
 
         config.Site.storageSite = args.site
 
+    if args.pset_params:
+        config.JobType.pyCfgParams = args.pset_params.split()
+
     options = parseOptions(args)
     if 'siteblacklist' in options:
         config.Site.blacklist = options['siteblacklist'].split(',')
@@ -248,6 +251,11 @@ def main():
                         )
     parser.add_argument('-p', '--pset',
                         help='Path to the CMSSW configuration file'
+                        )
+    parser.add_argument('--pset-params',
+                        default='',
+                        help="Space-separated pyCfgParams passed to the pset, "
+                             "e.g. 'llpMatch=0 maxEvents=-1'. Default: none"
                         )
     parser.add_argument('-s', '--splitting',
                         default='Automatic', choices=['Automatic', 'FileBased', 'LumiBased', 'EventAwareLumiBased'],

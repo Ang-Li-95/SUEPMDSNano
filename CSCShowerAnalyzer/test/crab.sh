@@ -8,3 +8,6 @@
 python3 crab_multi_dataset.py -i muonSkims.txt -p custom_config_AOD_data.py -t MDSnano  -o /store/group/lpclonglived/MDSnano/
 
 #python3 crab_multi_dataset.py -i zerobias.txt -p runCSCShowerAnalyzer_cfg.py -t HMTnTuple  -o /store/group/lpclonglived/HLT/zerobias22/
+
+# 2024 background MDS-NanoAOD from central AODSIM (llpMatch=0: no LLP-truth tables):
+#python3 crab_multi_dataset.py -i bkg2024.txt -p ../../MDSNANO/RunIII2024MC.py --pset-params 'llpMatch=0 maxEvents=-1' -t MDSnano -o /store/group/lpclonglived/MDSnano/bkg2024/

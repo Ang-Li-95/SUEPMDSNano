@@ -223,6 +223,14 @@ elif len(_opts.inputFiles) > 0:
 
 if _inputFiles:
     process.source.fileNames = cms.untracked.vstring(_inputFiles)
+
+# Apply maxEvents when input files were given, or when maxEvents was set
+# explicitly even without them: CRAB builds the config with only pyCfgParams
+# (e.g. ['llpMatch=0', 'maxEvents=-1']) and injects the input files at job
+# runtime, where its wrapper overrides maxEvents.input but NOT the output cap
+# -- without this, every CRAB job would silently write only 10 events.
+import sys as _sys
+if _inputFiles or any(_a.split('=')[0] == 'maxEvents' for _a in _sys.argv):
     process.maxEvents.input = cms.untracked.int32(_opts.maxEvents)
     # Match the output cap to the input limit (-1 => write every processed event).
     if hasattr(process.maxEvents, 'output'):
