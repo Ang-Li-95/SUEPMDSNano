@@ -45,10 +45,21 @@ No `git cms-addpkg` / cherry-pick step — everything is self-contained.
 cmsRun SUEPMDSNano/MDSNANO/RunIII2024MC.py inputFiles=file:AODSIM.root outputFile=nano.root maxEvents=-1
 ```
 
-The AODSIM input must have been produced with the `llpMDSRecHitMatcher` module
-(see the companion `SVJ/Production` area). `add_mdsTables(process, saveRechits=True)`
-then attaches the LLP-truth columns to the muon rechit tables — one entry per
-rechit, `llpIdx < 0` if unmatched:
+For **signal** the AODSIM input must have been produced with the
+`llpMDSRecHitMatcher` module (see the companion `SVJ/Production` area).
+`add_mdsTables(process, saveRechits=True)` then attaches the LLP-truth columns
+to the muon rechit tables — one entry per rechit, `llpIdx < 0` if unmatched.
+
+For **background / central AODSIM** (no matcher ValueMaps present), pass
+`llpMatch=0` on the command line: the rechit/segment/MDS-cluster tables are
+kept, only the LLP-truth columns and the `SUEPGenPart` table are skipped
+(`add_mdsTables(process, saveRechits=True, llpMatch=False)` underneath).
+
+```bash
+cmsRun SUEPMDSNano/MDSNANO/RunIII2024MC.py inputFiles=<central AODSIM> outputFile=nano.root llpMatch=0
+```
+
+Signal columns:
 
 | collection | added columns |
 |---|---|

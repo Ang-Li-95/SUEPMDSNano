@@ -65,6 +65,7 @@ cmsRun RunIII2024MC.py inputFiles=file:/a.root,file:/b.root outputFile=out.root
 | `inputFiles=a,b`   | Comma-separated input files. |
 | `outputFile=<name>`| Output file name (a bare name is written locally as `file:<name>`). |
 | `maxEvents=<N>`    | Events per job (`-1` = all). |
+| `llpMatch=<0/1>`   | `1` (default): attach the LLP-truth rechit columns + full `SUEPGenPart` table (signal AODSIM made with `llpMDSRecHitMatcher`). `0`: skip both — required for **central / background AODSIM**, which lacks the matcher ValueMaps. |
 
 You normally don't call these by hand — `submit_slurm.py` builds the `fileList`
 and passes the arguments for you.
@@ -81,7 +82,7 @@ and passes the arguments for you.
 
 | Flag | Meaning |
 |------|---------|
-| `-i, --input-dir` | Where to find input ROOT files (see [input forms](#input-forms)). |
+| `-i, --input-dir` **or** `--das` | Where to find input ROOT files (see [input forms](#input-forms)). |
 | `-n, --files-per-job` | Number of input files per job. |
 | `-o, --output` | Output destination directory (local path or `root://host//path`). |
 
@@ -93,11 +94,37 @@ and passes the arguments for you.
 -i /local/path/to/AODSIM                                   # local directory (recursed)
 -i root://eoscms.cern.ch//store/user/lian/.../AODSIM       # xrootd URL
 -i /store/user/lian/.../AODSIM --redirector root://eoscms.cern.ch/   # bare path + endpoint
+-i files.txt                                               # text file, one LFN/URL per line
 ```
 
 Remote directories are listed with `xrdfs <host> ls -R`; point `--redirector` at
 the **storage endpoint** (e.g. `eoscms.cern.ch`, `eosuser.cern.ch`), not a
 read-only global redirector, since it must support directory listing.
+
+Alternatively, `--das <dataset>` resolves a **central (DAS) dataset** with
+`dasgoclient` (needs a valid grid proxy — see below):
+
+```bash
+--das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-.../AODSIM
+```
+
+Bare `/store/...` LFNs (from `--das` or a list file) are turned into
+`root://<redirector>//store/...` URLs; the default read redirector is AAA
+(`root://cms-xrd-global.cern.ch/`), override with `--redirector`.
+
+### Grid proxy (central datasets / AAA reads)
+
+Reading `/store` over AAA — and the `--das` query itself — needs an X509 proxy:
+
+```bash
+voms-proxy-init -voms cms -rfc --valid 168:00
+```
+
+At submit time the proxy (`$X509_USER_PROXY` or `/tmp/x509up_u<uid>`, override
+with `--x509-proxy <file>`; `--x509-proxy none` disables) is **copied into the
+work dir** and exported to the jobs. If jobs are (re)submitted days later and
+fail with auth errors, refresh it: `voms-proxy-init ... && cp $(voms-proxy-info
+-path) <work-dir>/x509_proxy`.
 
 ### Output forms
 
@@ -116,6 +143,8 @@ The destination directory is created if missing. Each job writes
 | `--job-name` | `nano` | Base name for the jobs and output files. |
 | `--work-dir` | `./slurm_<job-name>` | Where file lists, logs and scripts go. |
 | `--max-events` | `-1` | Events per job. |
+| `--cmsrun-arg` | — | Extra cmsRun argument, repeatable. **Use `--cmsrun-arg llpMatch=0` for central / background AODSIM** (no `llpMDSRecHitMatcher` products). |
+| `--x509-proxy` | auto | Proxy file staged to the jobs (auto-detected; `none` disables). |
 | `--pattern` | `*.root` | Which files to pick up. |
 | `--no-recursive` | (off) | Only scan the top level of the input dir. |
 | `--config` | `RunIII2024MC.py` | The cmsRun config to run. |
@@ -167,6 +196,13 @@ host shell.
 # remote EOS inputs, local output, just preview
 ./submit_slurm.py -i /store/user/lian/.../AODSIM --redirector root://eoscms.cern.ch/ \
     -n 5 -o /scratch-cbe/users/me/nano --dry-run
+
+# central background dataset over AAA (needs voms-proxy-init first),
+# LLP-truth tables off:
+#   (find the exact name first with:
+#    dasgoclient -query="dataset dataset=/DYto2Mu_Bin-MLL-50to120*/RunIIISummer24DRPremix*/AODSIM")
+./submit_slurm.py --das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-<conditions>/AODSIM \
+    -n 5 -o /scratch-cbe/users/me/nano_DY2024 --job-name DY2024 --cmsrun-arg llpMatch=0
 ```
 
 ---

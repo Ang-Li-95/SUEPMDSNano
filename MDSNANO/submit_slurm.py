@@ -22,9 +22,24 @@ Example
   # ...or a bare path with an explicit redirector:
   ./submit_slurm.py -i /store/user/lian/.../AODSIM --redirector root://eoscms.cern.ch/ ...
 
+  # a central (DAS) dataset, read over AAA -- needs a grid proxy
+  # (voms-proxy-init -voms cms -rfc) before submitting:
+  ./submit_slurm.py --das /DYto2Mu_.../RunIIISummer24DRPremix-.../AODSIM -n 5 \\
+      -o /path/to/output/nano --job-name DY2024 --cmsrun-arg llpMatch=0
+
+  # ...or a pre-made text file with one LFN / URL per line:
+  ./submit_slurm.py -i files.txt -n 5 -o /path/to/output/nano --cmsrun-arg llpMatch=0
+
 Each job runs:
-  cmsRun RunIII2024MC.py fileList=<chunk.txt> outputFile=<name>.root maxEvents=-1
+  cmsRun RunIII2024MC.py fileList=<chunk.txt> outputFile=<name>.root maxEvents=-1 [extra args]
 inside the matching CMSSW container (cmssw-el8 by default for this release).
+Extra cmsRun arguments come from --cmsrun-arg (e.g. llpMatch=0 for central /
+background AODSIM without the llpMDSRecHitMatcher products).
+
+If a grid proxy is found at submit time (X509_USER_PROXY or /tmp/x509up_u<uid>,
+or --x509-proxy), it is copied into the work dir and exported to the jobs so
+they can read /store files over AAA. Bare /store LFNs (from --das or a list
+file) are read via --redirector (default root://cms-xrd-global.cern.ch/).
 
 This script needs no CMSSW environment and must run where 'sbatch' exists (the
 host) -- not inside the cmssw container. Only the jobs enter the container.
@@ -140,6 +155,67 @@ def redirector_host(redirector):
     return r.split("/")[0]
 
 
+DEFAULT_AAA = "root://cms-xrd-global.cern.ch/"
+
+
+def resolve_urls(lines, redirector):
+    """Turn a mix of URLs / bare LFNs / local paths into readable PFNs.
+
+    Bare /store LFNs are prefixed with the redirector (AAA by default); other
+    bare paths are taken as local files.
+    """
+    host = redirector_host(redirector or DEFAULT_AAA)
+    out = []
+    for line in lines:
+        if "://" in line or line.startswith("file:"):
+            out.append(line)
+        elif line.startswith("/store/"):
+            out.append("root://%s/%s" % (host, line))
+        else:
+            out.append("file:" + os.path.abspath(line))
+    return out
+
+
+def list_from_file(list_path, redirector):
+    """Read input files from a text file: one LFN / URL / local path per line."""
+    with open(list_path) as fh:
+        lines = [l.strip() for l in fh if l.strip() and not l.strip().startswith("#")]
+    return resolve_urls(lines, redirector)
+
+
+def find_proxy(override):
+    """Locate a grid proxy: --x509-proxy, $X509_USER_PROXY, or /tmp/x509up_u<uid>."""
+    if override:
+        if override.lower() == "none":
+            return None
+        p = os.path.abspath(override)
+        if not os.path.isfile(p):
+            sys.exit("ERROR: --x509-proxy not found: %s" % p)
+        return p
+    for p in (os.environ.get("X509_USER_PROXY"), "/tmp/x509up_u%d" % os.getuid()):
+        if p and os.path.isfile(p):
+            return p
+    return None
+
+
+def list_das(dataset, redirector):
+    """Resolve a DAS dataset to its file URLs with dasgoclient (needs a proxy)."""
+    das = shutil.which("dasgoclient") or "/cvmfs/cms.cern.ch/common/dasgoclient"
+    if not os.path.isfile(das):
+        sys.exit("ERROR: dasgoclient not found (looked in PATH and /cvmfs/cms.cern.ch/common/).")
+    if not find_proxy(None) and not os.environ.get("X509_USER_CERT"):
+        sys.exit("ERROR: DAS queries need a grid proxy. Run:\n"
+                 "  voms-proxy-init -voms cms -rfc --valid 168:00")
+    res = subprocess.run([das, "-query", "file dataset=%s" % dataset],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         universal_newlines=True)
+    if res.returncode != 0:
+        sys.exit("ERROR: dasgoclient query for '%s' failed:\n%s"
+                 % (dataset, res.stderr.strip()))
+    lfns = sorted(l.strip() for l in res.stdout.splitlines() if l.strip())
+    return resolve_urls(lfns, redirector)
+
+
 def in_container():
     """True when running inside the cms apptainer/singularity container."""
     return bool(os.environ.get("APPTAINER_CONTAINER")
@@ -152,14 +228,20 @@ def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    ap.add_argument("-i", "--input-dir", required=True,
-                    help="Directory scanned for input ROOT files. Either a local "
-                         "path, or an xrootd URL root://host//path, or a bare "
-                         "remote path combined with --redirector.")
+    ap.add_argument("-i", "--input-dir", default=None,
+                    help="Input ROOT files: a local directory (scanned), an "
+                         "xrootd URL root://host//path, a bare remote path "
+                         "combined with --redirector, or a .txt file holding "
+                         "one LFN / URL per line. Alternative: --das.")
+    ap.add_argument("--das", default=None,
+                    help="A DAS dataset name (e.g. /DYto2Mu_.../..._v2/AODSIM); "
+                         "its files are resolved with dasgoclient and read via "
+                         "--redirector. Needs a valid grid proxy. Alternative to -i.")
     ap.add_argument("--redirector", default=None,
-                    help="xrootd redirector/endpoint for a remote --input-dir "
-                         "given as a bare path, e.g. --redirector root://eoscms.cern.ch/ "
-                         "-i /store/user/.../AODSIM. Must support directory listing.")
+                    help="xrootd redirector/endpoint. For a bare-path --input-dir it "
+                         "must support directory listing (e.g. root://eoscms.cern.ch/); "
+                         "for bare /store LFNs from --das or a list file it is only a "
+                         "read prefix (default: %s)." % DEFAULT_AAA)
     ap.add_argument("-n", "--files-per-job", required=True, type=int,
                     help="Number of input files processed per Slurm job.")
     ap.add_argument("-o", "--output", required=True,
@@ -169,6 +251,14 @@ def main():
                     help="cmsRun configuration (default: %(default)s).")
     ap.add_argument("--max-events", default=-1, type=int,
                     help="maxEvents per job (default: -1 = all).")
+    ap.add_argument("--cmsrun-arg", action="append", default=[],
+                    help="Extra argument appended to the cmsRun command line, "
+                         "e.g. --cmsrun-arg llpMatch=0 for central/background "
+                         "AODSIM. Repeatable.")
+    ap.add_argument("--x509-proxy", default=None,
+                    help="Grid proxy file to copy into the work dir and export "
+                         "to the jobs (for AAA /store reads). Default: auto-detect "
+                         "$X509_USER_PROXY or /tmp/x509up_u<uid>; 'none' disables.")
     ap.add_argument("--job-name", default="nano",
                     help="Base name for the Slurm jobs and output files (default: %(default)s).")
     ap.add_argument("--work-dir", default=None,
@@ -215,12 +305,21 @@ def main():
     container = args.container if args.container is not None else default_container(scram_arch)
     container = "" if container in ("", "none", "None") else container
 
-    # ---- discover input files (local dir, xrootd URL, or path + redirector) ----
+    # ---- discover input files (local dir, xrootd URL, path + redirector,
+    #      list file, or DAS dataset) ----
     if args.files_per_job < 1:
         sys.exit("ERROR: --files-per-job must be >= 1")
-    raw_in = args.input_dir.rstrip("/")
+    if bool(args.input_dir) == bool(args.das):
+        sys.exit("ERROR: give exactly one of -i/--input-dir or --das")
     recursive = not args.no_recursive
-    if raw_in.startswith("root://"):
+    raw_in = args.input_dir.rstrip("/") if args.input_dir else ""
+    if args.das:
+        in_desc = "%s  [DAS dataset]" % args.das
+        files = list_das(args.das, args.redirector)
+    elif os.path.isfile(raw_in):
+        in_desc = "%s  [file list]" % os.path.abspath(raw_in)
+        files = list_from_file(raw_in, args.redirector)
+    elif raw_in.startswith("root://"):
         m = re.match(r"^root://([^/]+)/+(.*)$", raw_in)
         if not m:
             sys.exit("ERROR: could not parse xrootd input dir: %s" % args.input_dir)
@@ -258,6 +357,19 @@ def main():
     for i, chunk in enumerate(chunks):
         with open(os.path.join(filelist_dir, "job_%d.txt" % i), "w") as fh:
             fh.write("\n".join(chunk) + "\n")
+
+    # ---- stage the grid proxy into the work dir (shared FS) for the jobs ----
+    proxy_src = find_proxy(args.x509_proxy)
+    staged_proxy = ""
+    if proxy_src:
+        staged_proxy = os.path.join(work_dir, "x509_proxy")
+        shutil.copy2(proxy_src, staged_proxy)
+        os.chmod(staged_proxy, 0o600)
+    elif any(f.startswith("root://") for f in files):
+        print("WARNING: no grid proxy found and inputs are remote (root://...).")
+        print("         Jobs reading /store over AAA will fail to authenticate.")
+        print("         Run 'voms-proxy-init -voms cms -rfc --valid 168:00' and resubmit,")
+        print("         or pass --x509-proxy <file>.")
 
     # ---- parse output destination ----
     out = parse_output(args.output)
@@ -299,6 +411,8 @@ def main():
         'WORKDIR="%s"' % work_dir,
         'JOBNAME="%s"' % args.job_name,
         'MAXEVENTS="%d"' % args.max_events,
+        'CMSRUN_EXTRA="%s"' % " ".join(args.cmsrun_arg),
+        'X509_PROXY="%s"' % staged_proxy,
         'DEST_IS_XROOTD="%d"' % (1 if out["is_xrootd"] else 0),
         'DEST_HOST="%s"' % out["host"],
         'DEST_DIR="%s"' % out["dir"],
@@ -330,6 +444,10 @@ def main():
     print("Jobs (array)  : %d  (%s)" % (njobs, array))
     print("Output dest   : %s%s"
           % (args.output, "  [xrootd]" if out["is_xrootd"] else "  [local]"))
+    if args.cmsrun_arg:
+        print("cmsRun extras : %s" % " ".join(args.cmsrun_arg))
+    print("Grid proxy    : %s" % (("%s (from %s)" % (staged_proxy, proxy_src))
+                                  if staged_proxy else "(none staged)"))
     print("CMSSW_BASE    : %s" % cmssw_base)
     print("SCRAM_ARCH    : %s" % scram_arch)
     print("Container     : %s" % (container or "(none / run directly)"))
@@ -387,21 +505,30 @@ echo "==> task ${TASK} on $(hostname) at $(date)"
 echo "    inputs : ${FILELIST} ($(wc -l < "${FILELIST}") files)"
 echo "    output : ${OUTNAME} -> ${DEST_DIR}"
 
+# Grid proxy for AAA reads (cmsRun) and xrootd stage-out (xrdcp/xrdfs).
+if [[ -n "${X509_PROXY:-}" && -f "${X509_PROXY}" ]]; then
+  export X509_USER_PROXY="${X509_PROXY}"
+fi
+
 # Per-job scratch directory, cleaned up on exit.
 SCRATCH="${TMPDIR:-/tmp}/${JOBNAME}_${SLURM_JOB_ID:-$$}_${TASK}"
 mkdir -p "${SCRATCH}"
 trap 'rm -rf "${SCRATCH}"' EXIT
 
 # Inner script: set up CMSSW and run cmsRun. Executed inside the container.
+# The proxy export is written into the script (not just the outer env) so it
+# survives the container boundary; ${X509_PROXY:+...} drops the line when no
+# proxy was staged.
 INNER="${SCRATCH}/run_cmsRun.sh"
 cat > "${INNER}" <<EOF
 #!/bin/bash
 set -e
+${X509_PROXY:+export X509_USER_PROXY="${X509_PROXY}"}
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cd "${CMSSW_BASE_DIR}/src"
 eval \$(scramv1 runtime -sh)
 cd "${SCRATCH}"
-cmsRun "${CONFIG}" fileList="${FILELIST}" outputFile="${OUTNAME}" maxEvents="${MAXEVENTS}"
+cmsRun "${CONFIG}" fileList="${FILELIST}" outputFile="${OUTNAME}" maxEvents="${MAXEVENTS}" ${CMSRUN_EXTRA}
 EOF
 chmod +x "${INNER}"
 

@@ -144,21 +144,48 @@ from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeCommon
 
 #call to customisation function nanoAOD_customizeCommon imported from PhysicsTools.NanoAOD.nano_cff
 process = nanoAOD_customizeCommon(process)
+# ---------------------------------------------------------------------------
+# Command-line options (parsed here because llpMatch steers the customisation
+# below). Backward compatible: with no extra arguments the configuration
+# behaves exactly as before (same input file, same output name, maxEvents=10).
+#
+#   cmsRun RunIII2024MC.py fileList=files.txt outputFile=out.root maxEvents=-1
+#   cmsRun RunIII2024MC.py inputFiles=file:/a.root,file:/b.root outputFile=out.root
+#   cmsRun RunIII2024MC.py ... llpMatch=0     # central/background AODSIM
+# ---------------------------------------------------------------------------
+from FWCore.ParameterSet.VarParsing import VarParsing
+
+_opts = VarParsing('analysis')
+_opts.register('fileList', '',
+               VarParsing.multiplicity.singleton, VarParsing.varType.string,
+               "Text file holding one input file (PFN/LFN) per line")
+_opts.register('llpMatch', 1,
+               VarParsing.multiplicity.singleton, VarParsing.varType.int,
+               "1 (default): attach the LLP-truth rechit columns and the full "
+               "SUEPGenPart table (requires AODSIM produced with the "
+               "llpMDSRecHitMatcher module). 0: skip both, for central / "
+               "background AODSIM that lacks the matcher ValueMaps.")
+# Keep the standalone default output name identical to the original config.
+_opts.outputFile = 'EXO-RunIII2024Summer24NanoAODv15-00307.root'
+_opts.parseArguments()
+
 from SUEPMDSNano.CSCShowerAnalyzer.custom_mds_cff import add_mdsTables
 
-process = add_mdsTables(process, saveRechits=True)
+process = add_mdsTables(process, saveRechits=True, llpMatch=(_opts.llpMatch != 0))
 
-# Full (unpruned) genParticles table. The rechit llpIdx column indexes the AOD
-# genParticles collection, so this table must keep the full collection in its
-# original order (no cut) for llpIdx to be usable as a SUEPGenPart row index.
-process.genParticleForSUEPTable = process.genParticleTable.clone(
-    src = cms.InputTag("genParticles"),
-    name = cms.string("SUEPGenPart"),
-    externalVariables = None
-)
+if _opts.llpMatch != 0:
+    # Full (unpruned) genParticles table. The rechit llpIdx column indexes the AOD
+    # genParticles collection, so this table must keep the full collection in its
+    # original order (no cut) for llpIdx to be usable as a SUEPGenPart row index.
+    # Only useful together with the LLP-truth columns, so skipped for llpMatch=0.
+    process.genParticleForSUEPTable = process.genParticleTable.clone(
+        src = cms.InputTag("genParticles"),
+        name = cms.string("SUEPGenPart"),
+        externalVariables = None
+    )
 
-process.suepGenSequence = cms.Sequence(process.genParticleForSUEPTable)
-process.nanoSequenceMC = cms.Sequence(process.nanoSequenceMC + process.suepGenSequence)
+    process.suepGenSequence = cms.Sequence(process.genParticleForSUEPTable)
+    process.nanoSequenceMC = cms.Sequence(process.nanoSequenceMC + process.suepGenSequence)
 
 # End of customisation functions
 
@@ -182,23 +209,8 @@ process = customiseEarlyDelete(process)
 # End adding early deletion
 
 # ---------------------------------------------------------------------------
-# Command-line overrides for batch / Slurm submission.
-# Backward compatible: with no extra arguments the configuration above is used
-# unchanged (same input file, same output name, maxEvents=10).
-#
-#   cmsRun RunIII2024MC.py fileList=files.txt outputFile=out.root maxEvents=-1
-#   cmsRun RunIII2024MC.py inputFiles=file:/a.root,file:/b.root outputFile=out.root
+# Apply the command-line overrides parsed above (input files, output name).
 # ---------------------------------------------------------------------------
-from FWCore.ParameterSet.VarParsing import VarParsing
-
-_opts = VarParsing('analysis')
-_opts.register('fileList', '',
-               VarParsing.multiplicity.singleton, VarParsing.varType.string,
-               "Text file holding one input file (PFN/LFN) per line")
-# Keep the standalone default output name identical to the original config.
-_opts.outputFile = 'EXO-RunIII2024Summer24NanoAODv15-00307.root'
-_opts.parseArguments()
-
 # Resolve the input list: --fileList wins over --inputFiles; otherwise the
 # hard-coded process.source above is left untouched.
 _inputFiles = []

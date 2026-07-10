@@ -69,7 +69,7 @@ dtSegmentsTable = dtSegmentsTable.clone(
 )
 
 
-def add_mdsTables(process, MDSshowerDigi=False,saveRechits=False):
+def add_mdsTables(process, MDSshowerDigi=False,saveRechits=False,llpMatch=True):
 
     # Gen production-vertex columns on the standard GenPart table. This was a
     # PhysicsTools/NanoAOD/genparticles_cff.py cherry-pick; done here as a customise
@@ -123,14 +123,17 @@ def add_mdsTables(process, MDSshowerDigi=False,saveRechits=False):
         # cscRechits/dtRecHits/rpcRecHits tables above. A ValueMap of a POD struct is
         # schema-stable, so it survives the 14_0_21 -> 15_0_2 boundary (a FlatTable does not).
         # Requires the SUEPMDSNano/MDSFormats package to be built in this area.
-        from SUEPMDSNano.CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
-            cscLLPMatchTable, dtLLPMatchTable, rpcLLPMatchTable)
-        process.cscLLPMatchTable = cscLLPMatchTable
-        process.dtLLPMatchTable = dtLLPMatchTable
-        process.rpcLLPMatchTable = rpcLLPMatchTable
-        process.MDSTask.add(process.cscLLPMatchTable)
-        process.MDSTask.add(process.dtLLPMatchTable)
-        process.MDSTask.add(process.rpcLLPMatchTable)
+        # Pass llpMatch=False for inputs without the matcher ValueMaps (central /
+        # background AODSIM): the rechit tables are kept, only the llp* columns drop.
+        if llpMatch:
+            from SUEPMDSNano.CSCShowerAnalyzer.llpMDSMatchTable_cfi import (
+                cscLLPMatchTable, dtLLPMatchTable, rpcLLPMatchTable)
+            process.cscLLPMatchTable = cscLLPMatchTable
+            process.dtLLPMatchTable = dtLLPMatchTable
+            process.rpcLLPMatchTable = rpcLLPMatchTable
+            process.MDSTask.add(process.cscLLPMatchTable)
+            process.MDSTask.add(process.dtLLPMatchTable)
+            process.MDSTask.add(process.rpcLLPMatchTable)
 
 
     process.nanoTableTaskCommon.add(process.MDSTask)
