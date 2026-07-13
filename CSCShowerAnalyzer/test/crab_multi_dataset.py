@@ -127,6 +127,10 @@ def createConfig(args, dataset):
         #    config.Data.publication = False
         config.Data.outputDatasetTag = args.tag + '_' + vername
         config.Data.allowNonValidInputDataset = True
+        if args.partial_dataset:
+            # run over the disk-resident files only, instead of triggering a
+            # tape recall and waiting for the full dataset to be staged
+            config.Data.partialDataset = True
         config.Data.outLFNDirBase = args.outputdir
 
         #if not isMC and args.json:
@@ -278,6 +282,12 @@ def main():
                         )
     parser.add_argument('--private', action='store_true', default=False,
                         help='Turn on to read input txt files'
+                        )
+    parser.add_argument('--partial-dataset', action='store_true', default=False,
+                        help='Set Data.partialDataset: process only the files of the '
+                             'input dataset that are currently on disk, instead of '
+                             'requesting a tape recall and waiting for the full '
+                             'dataset (DBS datasets only). Default: %(default)s'
                         )
     parser.add_argument('--site',
                         default='T3_US_FNALLPC',
