@@ -9,3 +9,7 @@ __pycache__/
 configdump.py
 slurm_*/
 logs/
+
+# CRAB runtime artifacts
+crab_projects/
+crab.log

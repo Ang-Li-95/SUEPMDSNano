@@ -105,7 +105,7 @@ Alternatively, `--das <dataset>` resolves a **central (DAS) dataset** with
 `dasgoclient` (needs a valid grid proxy — see below):
 
 ```bash
---das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-.../AODSIM
+--das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24DRPremix-.../AODSIM
 ```
 
 Bare `/store/...` LFNs (from `--das` or a list file) are turned into
@@ -200,8 +200,8 @@ host shell.
 # central background dataset over AAA (needs voms-proxy-init first),
 # LLP-truth tables off:
 #   (find the exact name first with:
-#    dasgoclient -query="dataset dataset=/DYto2Mu_Bin-MLL-50to120*/RunIIISummer24DRPremix*/AODSIM")
-./submit_slurm.py --das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-<conditions>/AODSIM \
+#    dasgoclient -query="dataset dataset=/DYto2Mu_Bin-MLL-50to120*/RunIII2024Summer24DRPremix*/AODSIM")
+./submit_slurm.py --das /DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24DRPremix-140X_mcRun3_2024_realistic_v26-v2/AODSIM \
     -n 5 -o /scratch-cbe/users/me/nano_DY2024 --job-name DY2024 --cmsrun-arg llpMatch=0
 ```
 
@@ -293,7 +293,7 @@ source /cvmfs/cms.cern.ch/common/crab-setup.sh
 voms-proxy-init -voms cms -rfc --valid 168:00
 
 # one dataset per line (verify names with dasgoclient first)
-echo '/DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIIISummer24DRPremix-<conditions>/AODSIM' > bkg2024.txt
+echo '/DYto2Mu_Bin-MLL-50to120_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24DRPremix-140X_mcRun3_2024_realistic_v26-v2/AODSIM' > bkg2024.txt
 
 cd $CMSSW_BASE/src/SUEPMDSNano/CSCShowerAnalyzer/test
 python3 crab_multi_dataset.py -i /path/to/bkg2024.txt \

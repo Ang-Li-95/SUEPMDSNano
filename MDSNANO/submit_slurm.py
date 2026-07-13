@@ -24,7 +24,7 @@ Example
 
   # a central (DAS) dataset, read over AAA -- needs a grid proxy
   # (voms-proxy-init -voms cms -rfc) before submitting:
-  ./submit_slurm.py --das /DYto2Mu_.../RunIIISummer24DRPremix-.../AODSIM -n 5 \\
+  ./submit_slurm.py --das /DYto2Mu_.../RunIII2024Summer24DRPremix-.../AODSIM -n 5 \\
       -o /path/to/output/nano --job-name DY2024 --cmsrun-arg llpMatch=0
 
   # ...or a pre-made text file with one LFN / URL per line:
